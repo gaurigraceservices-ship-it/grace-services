@@ -13,39 +13,42 @@ const Contact = () => {
 
   // ✅ SUBMIT FUNCTION
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    console.log("Submitting:", name, email, message, phone);
+  console.log("Submitting:", name, email, message, phone);
 
+  try {
     const { data, error } = await supabase
       .from("contacts")
       .insert([
-        {
-          name,
-          email,
-          message,
-          phone,
-        },
-      ]);
+        { name, email, message, phone }
+      ])
+      .select(); // VERY IMPORTANT
 
     console.log("Response:", data, error);
 
     if (error) {
       alert("❌ Error saving data");
       console.log(error);
-    } else {
-      alert("✅ Data saved!");
-      setSubmitted(true);
-
-      // reset form
-      setName("");
-      setEmail("");
-      setMessage("");
-      setPhone("");
-
-      setTimeout(() => setSubmitted(false), 3000);
+      return; // STOP here
     }
-  };
+
+    // ✅ Only run if success
+    alert("✅ Data saved!");
+    setSubmitted(true);
+
+    setName("");
+    setEmail("");
+    setMessage("");
+    setPhone("");
+
+    setTimeout(() => setSubmitted(false), 3000);
+
+  } catch (err) {
+    console.log("Catch Error:", err);
+    alert("❌ Something went wrong");
+  }
+};
 
   return (
     <motion.div className="w-full min-h-screen px-6 md:px-20 lg:px-32 pt-40 pb-28">
