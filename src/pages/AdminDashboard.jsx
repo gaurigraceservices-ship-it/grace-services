@@ -1,7 +1,9 @@
+import { supabase } from "../supabase";
 import React, { useState, useEffect } from "react";
 
 const AdminDashboard = () => {
   const [jobs, setJobs] = useState([]);
+  const [contacts, setContacts] = useState([]); // ✅ NEW
   const [form, setForm] = useState({
     title: "",
     company: "",
@@ -10,10 +12,28 @@ const AdminDashboard = () => {
     description: "",
   });
 
-  // 🔥 Load jobs from localStorage
+  // 🔥 Load jobs (localStorage - keep this if you want jobs)
   useEffect(() => {
     const savedJobs = JSON.parse(localStorage.getItem("jobs")) || [];
     setJobs(savedJobs);
+  }, []);
+
+  // 🔥 Load contacts from Supabase ✅ MAIN PART
+  useEffect(() => {
+    const fetchContacts = async () => {
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("*")
+        .order("id", { ascending: false });
+
+      if (error) {
+        console.log("Error fetching:", error);
+      } else {
+        setContacts(data);
+      }
+    };
+
+    fetchContacts();
   }, []);
 
   // 🔥 Save jobs
@@ -59,6 +79,7 @@ const AdminDashboard = () => {
           <li className="text-white">Dashboard</li>
           <li>Add Job</li>
           <li>Manage Jobs</li>
+          <li>Contacts</li> {/* ✅ NEW */}
         </ul>
       </div>
 
@@ -72,12 +93,12 @@ const AdminDashboard = () => {
             <h2 className="text-3xl font-bold">{jobs.length}</h2>
           </div>
           <div className="bg-gray-800 p-6 rounded-xl">
-            <p>Active Listings</p>
-            <h2 className="text-3xl font-bold">{jobs.length}</h2>
+            <p>Total Contacts</p> {/* ✅ NEW */}
+            <h2 className="text-3xl font-bold">{contacts.length}</h2>
           </div>
           <div className="bg-gray-800 p-6 rounded-xl">
             <p>Applicants</p>
-            <h2 className="text-3xl font-bold">0</h2>
+            <h2 className="text-3xl font-bold">{contacts.length}</h2>
           </div>
         </div>
 
@@ -134,7 +155,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* JOB LIST */}
-        <div className="bg-gray-900 p-6 rounded-xl">
+        <div className="bg-gray-900 p-6 rounded-xl mb-10">
           <h2 className="text-xl mb-4">Manage Jobs</h2>
 
           {jobs.length === 0 ? (
@@ -158,6 +179,27 @@ const AdminDashboard = () => {
                 >
                   Delete
                 </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* 🔥 CONTACT LIST (MAIN FEATURE) */}
+        <div className="bg-gray-900 p-6 rounded-xl">
+          <h2 className="text-xl mb-4">Contact Submissions</h2>
+
+          {contacts.length === 0 ? (
+            <p className="text-gray-400">No contacts yet</p>
+          ) : (
+            contacts.map((item) => (
+              <div
+                key={item.id}
+                className="border-b border-gray-700 py-4"
+              >
+                <h3 className="font-semibold">{item.name}</h3>
+                <p className="text-gray-400">{item.email}</p>
+                <p className="text-gray-400">{item.phone}</p>
+                <p className="text-gray-300 mt-1">{item.message}</p>
               </div>
             ))
           )}

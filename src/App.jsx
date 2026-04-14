@@ -1,64 +1,128 @@
-import { Routes, Route, useLocation } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { supabase } from "../supabase";
+import React, { useState, useEffect } from "react";
 
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import WhatsAppButton from "./components/WhatsAppButton";
+const AdminDashboard = () => {
+  const [contacts, setContacts] = useState([]);
 
-import Home from "./pages/Home";
-import Services from "./pages/Services";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import HireStaff from "./pages/HireStaff";
-import ApplyJobs from "./pages/ApplyJobs";
-import AdminDashboard from "./pages/AdminDashboard";
-import Login from "./pages/Login";
-
-function App() {
-  const location = useLocation();
-
-  const [darkMode, setDarkMode] = useState(false);
-
-  // Load saved theme
+  // 🔥 FETCH CONTACTS FROM SUPABASE
   useEffect(() => {
-    const saved = localStorage.getItem("theme");
-    if (saved === "dark") setDarkMode(true);
+    const fetchContacts = async () => {
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.log("Error fetching:", error);
+      } else {
+        setContacts(data || []);
+      }
+    };
+
+    fetchContacts();
   }, []);
 
-  // Apply theme
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
+  // 📊 STATS FUNCTION
+  const getStats = () => {
+    const today = new Date().toISOString().split("T")[0];
+
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = yesterdayDate.toISOString().split("T")[0];
+
+    let todayCount = 0;
+    let yesterdayCount = 0;
+
+    contacts.forEach((item) => {
+      if (!item.created_at) return;
+
+      const date = new Date(item.created_at)
+        .toISOString()
+        .split("T")[0];
+
+      if (date === today) todayCount++;
+      if (date === yesterday) yesterdayCount++;
+    });
+
+    let growth = 0;
+    if (yesterdayCount > 0) {
+      growth = ((todayCount - yesterdayCount) / yesterdayCount) * 100;
     }
-  }, [darkMode]);
+
+    return {
+      todayCount,
+      yesterdayCount,
+      growth: Math.round(growth),
+    };
+  };
+
+  const { todayCount, yesterdayCount, growth } = getStats();
 
   return (
-    <div className="bg-[#f8f9fb] dark:bg-[#0f1115] transition-colors duration-500 min-h-screen">
+    <div className="min-h-screen flex bg-[#0f1115] text-white">
       
-      <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
+      {/* SIDEBAR */}
+      <div className="w-64 bg-black p-6">
+        <h2 className="text-2xl font-bold mb-10">Admin Panel</h2>
+        <ul className="space-y-4 text-gray-400">
+          <li className="text-white">Dashboard</li>
+          <li>Contacts</li>
+        </ul>
+      </div>
 
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Home />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/hire" element={<HireStaff />} />
-          <Route path="/apply" element={<ApplyJobs />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/login" element={<Login />} />
-        </Routes>
-      </AnimatePresence>
+      {/* MAIN */}
+      <div className="flex-1 p-10">
 
-      <Footer />
-      <WhatsAppButton />
+        {/* 📊 STATS */}
+        <div className="grid grid-cols-3 gap-6 mb-10">
+
+          <div className="bg-gray-800 p-6 rounded-xl">
+            <p>Today’s Leads</p>
+            <h2 className="text-3xl font-bold">{todayCount}</h2>
+          </div>
+
+          <div className="bg-gray-800 p-6 rounded-xl">
+            <p>Yesterday’s Leads</p>
+            <h2 className="text-3xl font-bold">{yesterdayCount}</h2>
+          </div>
+
+          <div className="bg-gray-800 p-6 rounded-xl">
+            <p>Growth</p>
+            <h2
+              className={`text-3xl font-bold ${
+                growth >= 0 ? "text-green-400" : "text-red-400"
+              }`}
+            >
+              {growth}%
+            </h2>
+          </div>
+
+        </div>
+
+        {/* 📋 CONTACT LIST */}
+        <div className="bg-gray-900 p-6 rounded-xl">
+          <h2 className="text-xl mb-4">Contacts</h2>
+
+          {contacts.length === 0 ? (
+            <p className="text-gray-400">No contacts yet</p>
+          ) : (
+            contacts.map((item) => (
+              <div
+                key={item.id}
+                className="border-b border-gray-700 py-4"
+              >
+                <h3 className="font-semibold">{item.name}</h3>
+                <p className="text-gray-400 text-sm">{item.email}</p>
+                <p className="text-gray-400 text-sm">{item.phone}</p>
+                <p className="text-gray-500 text-sm">{item.message}</p>
+              </div>
+            ))
+          )}
+        </div>
+
+      </div>
     </div>
   );
-}
+};
 
-export default App;
+export default AdminDashboard;
