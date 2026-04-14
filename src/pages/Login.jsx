@@ -9,49 +9,39 @@ const Login = () => {
     password: "",
   });
 
-  const [show, setShow] = useState(false); // 👈 NEW
+  const [show, setShow] = useState(false);
 
-  const users = [
-    { email: "user@gmail.com", password: "1234", role: "user" },
-    { email: "admin@gmail.com", password: "admin123", role: "admin" },
-  ];
-
-  // 🔥 AUTO REDIRECT
+  // 🔥 AUTO REDIRECT IF ALREADY ADMIN
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
 
-    if (user) {
-      if (user.role === "admin") navigate("/admin");
-      else navigate("/apply");
+    if (user?.role === "admin") {
+      navigate("/admin");
     }
-  }, []);
+  }, [navigate]);
 
+  // 🔐 ADMIN LOGIN ONLY
   const handleLogin = (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const foundUser = users.find(
-      (u) =>
-        u.email === form.email && u.password === form.password
+  if (
+    form.email === "gauri@graceservices.in" &&
+    form.password === "grace@123"
+  ) {
+    localStorage.setItem(
+      "user",
+      JSON.stringify({ role: "admin" })
     );
 
-    if (!foundUser) {
-      alert("Invalid credentials 😭");
-      return;
-    }
-
-    localStorage.setItem("user", JSON.stringify(foundUser));
-
-    if (foundUser.role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/apply");
-    }
-  };
-
+    navigate("/admin");
+  } else {
+    alert("❌ Invalid admin credentials");
+  }
+};
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 bg-gray-50 overflow-hidden">
 
-      {/* ✨ soft background glow */}
+      {/* ✨ Background Glow */}
       <div className="absolute w-[400px] h-[400px] bg-purple-200 blur-[120px] rounded-full top-[-100px] left-[-100px]" />
       <div className="absolute w-[300px] h-[300px] bg-blue-200 blur-[120px] rounded-full bottom-[-100px] right-[-100px]" />
 
@@ -62,7 +52,7 @@ const Login = () => {
                       shadow-lg">
 
         <h2 className="text-2xl font-semibold text-center text-gray-900 mb-6">
-          Welcome Back 👋
+          Admin Login 🔐
         </h2>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -70,7 +60,7 @@ const Login = () => {
           {/* EMAIL */}
           <input
             type="email"
-            placeholder="Email"
+            placeholder="Admin Email"
             className="w-full p-3 rounded-lg border border-gray-300 
                        focus:outline-none focus:ring-2 focus:ring-purple-400"
             value={form.email}
@@ -80,7 +70,7 @@ const Login = () => {
             required
           />
 
-          {/* PASSWORD WITH SHOW/HIDE */}
+          {/* PASSWORD */}
           <div className="relative">
             <input
               type={show ? "text" : "password"}
@@ -108,14 +98,14 @@ const Login = () => {
                        bg-black text-white font-medium 
                        hover:opacity-90 active:scale-95 transition"
           >
-            Login
+            Login as Admin
           </button>
         </form>
 
-        {/* Demo creds */}
+        {/* 🔐 Admin Credentials */}
         <p className="text-xs text-gray-500 mt-6 text-center">
-          Demo: user@gmail.com / 1234 <br />
-          Admin: admin@gmail.com / admin123
+          Admin Access Only <br />
+          admin@gmail.com / admin123
         </p>
       </div>
     </div>

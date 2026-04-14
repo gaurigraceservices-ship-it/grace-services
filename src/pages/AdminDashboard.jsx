@@ -2,204 +2,127 @@ import { supabase } from "../supabase";
 import React, { useState, useEffect } from "react";
 
 const AdminDashboard = () => {
-  const [jobs, setJobs] = useState([]);
-  const [contacts, setContacts] = useState([]); // ✅ NEW
-  const [form, setForm] = useState({
-    title: "",
-    company: "",
-    location: "",
-    type: "",
-    description: "",
-  });
+  const [contacts, setContacts] = useState([]);
 
-  // 🔥 Load jobs (localStorage - keep this if you want jobs)
-  useEffect(() => {
-    const savedJobs = JSON.parse(localStorage.getItem("jobs")) || [];
-    setJobs(savedJobs);
-  }, []);
-
-  // 🔥 Load contacts from Supabase ✅ MAIN PART
+  // 🔥 FETCH CONTACTS FROM SUPABASE
   useEffect(() => {
     const fetchContacts = async () => {
       const { data, error } = await supabase
         .from("contacts")
         .select("*")
-        .order("id", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) {
         console.log("Error fetching:", error);
       } else {
-        setContacts(data);
+        setContacts(data || []);
       }
     };
 
     fetchContacts();
   }, []);
 
-  // 🔥 Save jobs
-  const saveJobs = (updatedJobs) => {
-    setJobs(updatedJobs);
-    localStorage.setItem("jobs", JSON.stringify(updatedJobs));
-  };
+  // 📊 STATS FUNCTION
+  const getStats = () => {
+    const today = new Date().toISOString().split("T")[0];
 
-  // ➕ Add Job
-  const handleAddJob = (e) => {
-    e.preventDefault();
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = yesterdayDate.toISOString().split("T")[0];
 
-    const newJob = {
-      id: Date.now(),
-      ...form,
-    };
+    let todayCount = 0;
+    let yesterdayCount = 0;
 
-    const updatedJobs = [newJob, ...jobs];
-    saveJobs(updatedJobs);
+    contacts.forEach((item) => {
+      if (!item.created_at) return;
 
-    setForm({
-      title: "",
-      company: "",
-      location: "",
-      type: "",
-      description: "",
+      const date = new Date(item.created_at)
+        .toISOString()
+        .split("T")[0];
+
+      if (date === today) todayCount++;
+      if (date === yesterday) yesterdayCount++;
     });
+
+    // 🔥 FIXED GROWTH LOGIC
+    let growth = 0;
+
+    if (yesterdayCount === 0 && todayCount > 0) {
+      growth = 100;
+    } else if (yesterdayCount > 0) {
+      growth = ((todayCount - yesterdayCount) / yesterdayCount) * 100;
+    }
+
+    return {
+      todayCount,
+      yesterdayCount,
+      growth: Math.round(growth),
+    };
   };
 
-  // ❌ Delete Job
-  const handleDelete = (id) => {
-    const updatedJobs = jobs.filter((job) => job.id !== id);
-    saveJobs(updatedJobs);
-  };
+  const { todayCount, yesterdayCount, growth } = getStats();
 
   return (
-    <div className="min-h-screen flex bg-[#0f1115] text-white">
-      
+    <div className="min-h-screen flex bg-gray-100 text-black pt-24">
+
       {/* SIDEBAR */}
-      <div className="w-64 bg-black p-6">
+      <div className="w-64 bg-white p-6 shadow-lg">
         <h2 className="text-2xl font-bold mb-10">Admin Panel</h2>
-        <ul className="space-y-4 text-gray-400">
-          <li className="text-white">Dashboard</li>
-          <li>Add Job</li>
-          <li>Manage Jobs</li>
-          <li>Contacts</li> {/* ✅ NEW */}
+        <ul className="space-y-4 text-gray-600">
+          <li className="text-black font-semibold">Dashboard</li>
+          <li>Contacts</li>
         </ul>
       </div>
 
       {/* MAIN */}
       <div className="flex-1 p-10">
 
-        {/* STATS */}
+        {/* 📊 STATS */}
         <div className="grid grid-cols-3 gap-6 mb-10">
-          <div className="bg-gray-800 p-6 rounded-xl">
-            <p>Total Jobs</p>
-            <h2 className="text-3xl font-bold">{jobs.length}</h2>
+
+          <div className="bg-white p-6 rounded-xl shadow">
+            <p className="text-gray-500">Today’s Leads</p>
+            <h2 className="text-3xl font-bold">{todayCount}</h2>
           </div>
-          <div className="bg-gray-800 p-6 rounded-xl">
-            <p>Total Contacts</p> {/* ✅ NEW */}
-            <h2 className="text-3xl font-bold">{contacts.length}</h2>
+
+          <div className="bg-white p-6 rounded-xl shadow">
+            <p className="text-gray-500">Yesterday’s Leads</p>
+            <h2 className="text-3xl font-bold">{yesterdayCount}</h2>
           </div>
-          <div className="bg-gray-800 p-6 rounded-xl">
-            <p>Applicants</p>
-            <h2 className="text-3xl font-bold">{contacts.length}</h2>
+
+          <div className="bg-white p-6 rounded-xl shadow">
+            <p className="text-gray-500">Growth</p>
+            <h2
+              className={`text-3xl font-bold ${
+                growth > 0
+                  ? "text-green-600"
+                  : growth < 0
+                  ? "text-red-600"
+                  : "text-gray-500"
+              }`}
+            >
+              {growth}%
+            </h2>
           </div>
+
         </div>
 
-        {/* ADD JOB FORM */}
-        <div className="bg-gray-900 p-6 rounded-xl mb-10">
-          <h2 className="text-xl mb-4">Add New Job</h2>
-
-          <form onSubmit={handleAddJob} className="grid grid-cols-2 gap-4">
-
-            <input
-              placeholder="Job Title"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="p-3 rounded bg-gray-800"
-              required
-            />
-
-            <input
-              placeholder="Company"
-              value={form.company}
-              onChange={(e) => setForm({ ...form, company: e.target.value })}
-              className="p-3 rounded bg-gray-800"
-              required
-            />
-
-            <input
-              placeholder="Location"
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-              className="p-3 rounded bg-gray-800"
-              required
-            />
-
-            <input
-              placeholder="Type (Full-Time)"
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-              className="p-3 rounded bg-gray-800"
-              required
-            />
-
-            <textarea
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="p-3 rounded bg-gray-800 col-span-2"
-              required
-            />
-
-            <button className="col-span-2 bg-white text-black py-3 rounded">
-              Add Job
-            </button>
-          </form>
-        </div>
-
-        {/* JOB LIST */}
-        <div className="bg-gray-900 p-6 rounded-xl mb-10">
-          <h2 className="text-xl mb-4">Manage Jobs</h2>
-
-          {jobs.length === 0 ? (
-            <p className="text-gray-400">No jobs yet</p>
-          ) : (
-            jobs.map((job) => (
-              <div
-                key={job.id}
-                className="flex justify-between items-center border-b border-gray-700 py-4"
-              >
-                <div>
-                  <h3 className="font-semibold">{job.title}</h3>
-                  <p className="text-gray-400 text-sm">
-                    {job.company} • {job.location}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => handleDelete(job.id)}
-                  className="text-red-400"
-                >
-                  Delete
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* 🔥 CONTACT LIST (MAIN FEATURE) */}
-        <div className="bg-gray-900 p-6 rounded-xl">
-          <h2 className="text-xl mb-4">Contact Submissions</h2>
+        {/* 📋 CONTACT LIST */}
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-xl mb-4 font-semibold">Contacts</h2>
 
           {contacts.length === 0 ? (
-            <p className="text-gray-400">No contacts yet</p>
+            <p className="text-gray-500">No contacts yet</p>
           ) : (
             contacts.map((item) => (
               <div
                 key={item.id}
-                className="border-b border-gray-700 py-4"
+                className="border-b border-gray-200 py-4"
               >
-                <h3 className="font-semibold">{item.name}</h3>
-                <p className="text-gray-400">{item.email}</p>
-                <p className="text-gray-400">{item.phone}</p>
-                <p className="text-gray-300 mt-1">{item.message}</p>
+                <h3 className="font-semibold">{item.Name}</h3>
+                <p className="text-gray-600 text-sm">{item.Email}</p>
+                <p className="text-gray-600 text-sm">{item.Phone}</p>
+                <p className="text-gray-500 text-sm">{item.Message}</p>
               </div>
             ))
           )}
