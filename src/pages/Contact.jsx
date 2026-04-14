@@ -21,7 +21,7 @@ const Contact = () => {
     const { data, error } = await supabase
       .from("contacts")
       .insert([
-        { name, email, message, phone }
+        { Name, Email, Message, Phone }
       ])
       .select(); // VERY IMPORTANT
 
