@@ -5,59 +5,63 @@ import { useState } from "react";
 const Contact = () => {
   const [submitted, setSubmitted] = useState(false);
 
-  // ✅ FORM STATES
+  // FORM STATES
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [phone, setPhone] = useState("");
 
-  // ✅ SUBMIT FUNCTION
+  // SUBMIT FUNCTION
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  console.log("Submitting:", name, email, message, phone);
+    console.log("Submitting:", name, email, message, phone);
 
-  try {
-    const { data, error } = await supabase
-      .from("contacts")
-      .insert([
-        { Name, Email, Message, Phone }
-      ])
-      .select(); // VERY IMPORTANT
+    try {
+      const { data, error } = await supabase
+        .from("contacts")
+        .insert([
+          {
+            Name: name,
+            Email: email,
+            Message: message,
+            Phone: phone,
+          },
+        ])
+        .select();
 
-    console.log("Response:", data, error);
+      console.log("Response:", data, error);
 
-    if (error) {
-      alert("❌ Error saving data");
-      console.log(error);
-      return; // STOP here
+      if (error) {
+        console.log("SUPABASE ERROR:", error);
+        alert("❌ " + error.message);
+        return;
+      }
+
+      // SUCCESS
+      alert("✅ Data saved!");
+      setSubmitted(true);
+
+      // Reset form
+      setName("");
+      setEmail("");
+      setMessage("");
+      setPhone("");
+
+      setTimeout(() => setSubmitted(false), 3000);
+
+    } catch (err) {
+      console.log("FULL ERROR:", err);
+      alert("❌ " + err.message);
     }
-
-    // ✅ Only run if success
-    alert("✅ Data saved!");
-    setSubmitted(true);
-
-    setName("");
-    setEmail("");
-    setMessage("");
-    setPhone("");
-
-    setTimeout(() => setSubmitted(false), 3000);
-
-  } catch (err) {
-    console.log("Catch Error:", err);
-    alert("❌ Something went wrong");
-  }
-};
+  };
 
   return (
     <motion.div className="w-full min-h-screen px-6 md:px-20 lg:px-32 pt-40 pb-28">
-
       <div className="grid md:grid-cols-2 gap-12 mt-20">
 
         {/* FORM */}
         <div>
-
           {submitted ? (
             <div className="text-center py-20">
               <h3 className="text-xl font-semibold">Message Sent 🚀</h3>
