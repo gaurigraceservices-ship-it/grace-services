@@ -28,7 +28,7 @@ const Footer = () => {
         {/* Contact */}
         <div>
           <h3 className="text-lg font-semibold">Contact</h3>
-          <p className="mt-4 text-gray-400">📞 88799 65634</p>
+          <p className="mt-4 text-gray-400">📞 +91 8657834312</p>
           <p className="text-gray-400">📧 graceservice25@gmail.com</p>
           <p className="text-gray-400">📍 Mumbai, India</p>
 

@@ -1,7 +1,7 @@
 import { FaWhatsapp } from "react-icons/fa";
 
 const WhatsAppButton = () => {
-  const phoneNumber = "918879965634";
+  const phoneNumber = "918657834312";
 
   const message = "Hi Grace Services! I’m interested in your manpower services. Can you share more details?";
 
